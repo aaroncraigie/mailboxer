@@ -50,7 +50,6 @@ ActiveRecord::Schema.define(:version => 20131206080416) do
     t.string   "notification_code"
     t.integer  "conversation_id"
     t.boolean  "draft",                :default => false
-    t.string   "attachment"
     t.datetime "updated_at",                              :null => false
     t.datetime "created_at",                              :null => false
     t.boolean  "global",               :default => false
