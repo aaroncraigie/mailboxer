@@ -44,6 +44,10 @@ class Mailboxer::Mailbox
     conv
   end
 
+  def latest_conversations
+    Mailboxer::Message.latest_message_in_conversation(messageable)
+  end
+
   #Returns the conversations in the inbox of messageable
   #
   #Same as conversations({:mailbox_type => 'inbox'})

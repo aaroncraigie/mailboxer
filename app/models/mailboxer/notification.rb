@@ -30,6 +30,34 @@ class Mailboxer::Notification < ActiveRecord::Base
     where("#{Mailboxer::Notification.quoted_table_name}.expires is NULL OR #{Mailboxer::Notification.quoted_table_name}.expires > ?", Time.now)
   }
 
+  has_many :participants, -> { distinct }, through: :receipts, source: :receiver, source_type: 'Dog'
+
+  scope :latest_message_in_conversation, ->(participant) { latest_messages_in_conversation(participant) }
+  scope :latest_messages_in_conversation, -> (participant, per: 1) do 
+    from_ordered(participant).where('row_number <= ?', per) 
+  end
+
+  def self.from_ordered(participant)
+    from <<-SQL.strip_heredoc 
+      (select
+          row_number() over (partition by conversation_id order by n.created_at desc) as row_number,
+          n.*,
+          is_read,
+          trashed,
+          deleted
+      from 
+          mailboxer_notifications n
+      join 
+          mailboxer_receipts r on n.id=r.notification_id
+      where 
+          r.receiver_id = #{participant.id}
+      and
+          r.receiver_type = '#{participant.class.name}'
+      order by
+        n.created_at desc) as mailboxer_notifications
+    SQL
+  end
+
   class << self
     #Sends a Notification to all the recipients
     def notify_all(recipients, subject, body, obj = nil, sanitize_text = true, notification_code=nil, send_mail=true, sender=nil)
